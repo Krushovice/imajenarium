@@ -9,9 +9,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from app.core.config import settings
 from app.models.base import Base
 
-# Populated as models are created in 1.4+
-# Import all model modules here so Base.metadata is complete for autogenerate.
-# from app.models import users, books, ...  # noqa: F401  (uncomment as models are added)
+# All models must be imported so Base.metadata is populated for autogenerate.
+import app.models  # noqa: F401
 
 config = context.config
 

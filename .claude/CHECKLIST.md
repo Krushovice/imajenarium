@@ -17,7 +17,7 @@
 - [x] **1.1** FastAPI app skeleton: структура пакетов, config из ENV, Pydantic settings
 - [x] **1.2** SQLAlchemy 2 base: async engine, session factory, base model
 - [x] **1.3** Alembic setup: init, первая миграция (create tables)
-- [ ] **1.4** Модели БД: `users`, `literary_dna`, `books`, `user_books`, `reading_diary`, `friendships`, `recommendations`
+- [x] **1.4** Модели БД: `users`, `literary_dna`, `books`, `user_books`, `reading_diary`, `friendships`, `recommendations`
 - [ ] **1.5** Repository layer: базовый CRUD репозиторий + репозитории под каждую сущность
 - [ ] **1.6** Dependency injection: DB session, current user, service locator
 
@@ -151,4 +151,4 @@
 
 ## Статус
 
-Текущий пункт: **1.4**
+Текущий пункт: **1.5**
