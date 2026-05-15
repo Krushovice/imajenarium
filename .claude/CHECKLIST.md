@@ -19,7 +19,7 @@
 - [x] **1.3** Alembic setup: init, первая миграция (create tables)
 - [x] **1.4** Модели БД: `users`, `literary_dna`, `books`, `user_books`, `reading_diary`, `friendships`, `recommendations`
 - [x] **1.5** Repository layer: базовый CRUD репозиторий + репозитории под каждую сущность
-- [ ] **1.6** Dependency injection: DB session, current user, service locator
+- [x] **1.6** Dependency injection: DB session, current user, service locator
 
 ---
 
@@ -151,4 +151,4 @@
 
 ## Статус
 
-Текущий пункт: **1.6**
+Текущий пункт: **2.1**
