@@ -46,6 +46,42 @@ class RecommendationAIService:
             logger.error("recommend_by_mood parse failed: %s", exc)
             return []
 
+    async def recommend_from_reviews(
+        self, reviews: list[dict], count: int = 5
+    ) -> list[dict]:
+        import json as _json
+        prompt = self._prompts.get(
+            "recommendations", "from_reviews",
+            reviews=_json.dumps(reviews, ensure_ascii=False, indent=2),
+            count=str(count),
+        )
+        resp = await self._provider.chat(
+            [ChatMessage(role="user", content=prompt)], temperature=0.8
+        )
+        try:
+            return _json.loads(extract_json(resp.content)).get("recommendations", [])
+        except Exception as exc:
+            logger.error("recommend_from_reviews parse failed: %s", exc)
+            return []
+
+    async def recommend_from_prompt(
+        self, user_prompt: str, literary_dna: dict, count: int = 5
+    ) -> list[dict]:
+        prompt = self._prompts.get(
+            "recommendations", "ai_prompt",
+            user_prompt=user_prompt,
+            literary_dna=json.dumps(literary_dna, ensure_ascii=False, indent=2),
+            count=str(count),
+        )
+        resp = await self._provider.chat(
+            [ChatMessage(role="user", content=prompt)], temperature=0.9
+        )
+        try:
+            return json.loads(extract_json(resp.content)).get("recommendations", [])
+        except Exception as exc:
+            logger.error("recommend_from_prompt parse failed: %s", exc)
+            return []
+
     async def explain_recommendation(
         self, book_title: str, book_author: str, literary_dna: dict
     ) -> str:

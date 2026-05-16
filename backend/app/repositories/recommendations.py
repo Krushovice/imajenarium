@@ -75,3 +75,26 @@ class RecommendationRepository(BaseRepository[Recommendation]):
             .where(Recommendation.id == recommendation_id)
             .values(dismissed=True)
         )
+
+    async def delete_by_source(
+        self, user_id: uuid.UUID, source: RecommendationSource
+    ) -> int:
+        """Delete all recommendations for user+source (used before refresh)."""
+        from sqlalchemy import delete
+        result = await self.session.execute(
+            delete(Recommendation).where(
+                Recommendation.user_id == user_id,
+                Recommendation.source == source,
+            )
+        )
+        return result.rowcount
+
+    async def get_existing_book_ids(self, user_id: uuid.UUID) -> set[uuid.UUID]:
+        """Return book_ids of non-dismissed recommendations for dedup."""
+        result = await self.session.execute(
+            select(Recommendation.book_id).where(
+                Recommendation.user_id == user_id,
+                Recommendation.dismissed.is_(False),
+            )
+        )
+        return {row[0] for row in result.all()}
