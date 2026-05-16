@@ -25,12 +25,12 @@
 
 ## 2. Auth
 
-- [ ] **2.1** JWT auth: access + refresh tokens, secure cookies
-- [ ] **2.2** Email + Password регистрация/вход
-- [ ] **2.3** Telegram Login Widget интеграция
-- [ ] **2.4** OAuth providers (Google минимум)
-- [ ] **2.5** Guest mode (анонимная сессия)
-- [ ] **2.6** Rate limiting + CSRF + XSS защита
+- [x] **2.1** JWT auth: access + refresh tokens, secure cookies
+- [x] **2.2** Email + Password регистрация/вход
+- [x] **2.3** Telegram Login Widget интеграция
+- [x] **2.4** OAuth providers (Google минимум)
+- [x] **2.5** Guest mode (анонимная сессия)
+- [x] **2.6** Rate limiting + CSRF + XSS защита
 
 ---
 
@@ -151,4 +151,4 @@
 
 ## Статус
 
-Текущий пункт: **2.1**
+Текущий пункт: **3.1**

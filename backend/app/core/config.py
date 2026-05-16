@@ -86,6 +86,10 @@ class Settings(BaseSettings):
     google_api_key: str | None = None
     gemini_model: str = "gemini-1.5-flash"
 
+    # Google OAuth
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.2"
 
