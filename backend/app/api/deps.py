@@ -163,3 +163,28 @@ def get_repos(db: DBSession) -> Repos:
 
 
 ReposDep = Annotated[Repos, Depends(get_repos)]
+
+# ---------------------------------------------------------------------------
+# AI service deps
+# ---------------------------------------------------------------------------
+
+
+def get_recommendation_ai() -> "RecommendationAIService":
+    from app.ai import get_active_provider, get_prompt_registry
+    from app.ai.tasks.recommendation import RecommendationAIService
+
+    return RecommendationAIService(get_active_provider(), get_prompt_registry())
+
+
+def get_literary_dna_ai() -> "LiteraryDNAService":
+    from app.ai import get_active_provider, get_prompt_registry
+    from app.ai.tasks.literary_dna import LiteraryDNAService
+
+    return LiteraryDNAService(get_active_provider(), get_prompt_registry())
+
+
+def get_review_analysis_ai() -> "ReviewAnalysisService":
+    from app.ai import get_active_provider, get_prompt_registry
+    from app.ai.tasks.review_analysis import ReviewAnalysisService
+
+    return ReviewAnalysisService(get_active_provider(), get_prompt_registry())

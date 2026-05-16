@@ -36,14 +36,14 @@
 
 ## 3. AI Abstraction Layer
 
-- [ ] **3.1** `BaseAIProvider(ABC)`: интерфейс `chat`, `embeddings`, `summarize`, `analyze_emotions`
-- [ ] **3.2** Провайдеры: `OpenAIProvider`, `AnthropicProvider`, `OpenRouterProvider`, `OllamaProvider`
-- [ ] **3.3** Провайдеры: `MistralProvider`, `GeminiProvider`
-- [ ] **3.4** Failover система: OpenAI → OpenRouter → Ollama
-- [ ] **3.5** ENV-based провайдер selection (`AI_PROVIDER=`)
-- [ ] **3.6** Prompt Registry: загрузка промптов из `prompts/` директории
-- [ ] **3.7** AI Tasks Layer: `RecommendationAIService`, `LiteraryDNAService`, `ReviewAnalysisService`
-- [ ] **3.8** Local embeddings: sentence-transformers (all-MiniLM-L6-v2) + pgvector интеграция
+- [x] **3.1** `BaseAIProvider(ABC)`: интерфейс `chat`, `embeddings`, `summarize`, `analyze_emotions`
+- [x] **3.2** Провайдеры: `OpenAIProvider`, `AnthropicProvider`, `OpenRouterProvider`, `OllamaProvider`
+- [x] **3.3** Провайдеры: `MistralProvider`, `GeminiProvider`
+- [x] **3.4** Failover система: OpenAI → OpenRouter → Ollama
+- [x] **3.5** ENV-based провайдер selection (`AI_PROVIDER=`)
+- [x] **3.6** Prompt Registry: загрузка промптов из `prompts/` директории
+- [x] **3.7** AI Tasks Layer: `RecommendationAIService`, `LiteraryDNAService`, `ReviewAnalysisService`
+- [x] **3.8** Local embeddings: sentence-transformers (all-MiniLM-L6-v2) + pgvector интеграция
 
 ---
 
@@ -151,4 +151,4 @@
 
 ## Статус
 
-Текущий пункт: **3.1**
+Текущий пункт: **4.1**
