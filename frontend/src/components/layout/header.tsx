@@ -17,11 +17,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { fadeInDown } from "@/lib/animations";
 
-const NAV_LINKS = [
+const AUTH_NAV_LINKS = [
   { href: "/discover", label: "Открытия" },
   { href: "/diary", label: "Дневник" },
   { href: "/social", label: "Друзья" },
   { href: "/feed", label: "Новости" },
+];
+
+const GUEST_NAV_LINKS = [
+  { href: "/feed", label: "Новости" },
+  { href: "/discover", label: "Открытия" },
+  { href: "/manifesto", label: "Манифест" },
+  { href: "/how-it-works", label: "Как работает" },
 ];
 
 export function Header() {
@@ -29,6 +36,7 @@ export function Header() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navLinks = isAuthenticated ? AUTH_NAV_LINKS : GUEST_NAV_LINKS;
 
   return (
     <motion.header
@@ -47,15 +55,15 @@ export function Header() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                "px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition-all duration-200",
                 pathname.startsWith(link.href)
-                  ? "bg-accent text-amber"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  ? "text-amber bg-amber/10"
+                  : "text-[#E8D8BC] hover:text-amber hover:bg-amber/10"
               )}
             >
               {link.label}
@@ -102,16 +110,14 @@ export function Header() {
             <div className="flex items-center gap-2">
               <Link
                 href="/auth/login"
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                  "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                )}
+                className="px-4 py-1.5 rounded-lg text-base font-semibold tracking-wide border border-amber/40 text-[#E8D8BC] hover:text-amber hover:border-amber hover:bg-amber/10 transition-all duration-200"
+                style={{ fontFamily: "var(--font-spectral)" }}
               >
                 Войти
               </Link>
               <Link
                 href="/auth/register"
-                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-amber text-background hover:bg-amber-light transition-colors"
+                className="hidden"
               >
                 Начать
               </Link>
@@ -145,16 +151,16 @@ export function Header() {
           className="border-t border-border md:hidden"
         >
           <nav className="flex flex-col p-4 gap-1">
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                  "px-4 py-3 rounded-lg text-sm font-semibold tracking-wide transition-all duration-200",
                   pathname.startsWith(link.href)
-                    ? "bg-accent text-amber"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    ? "text-amber bg-amber/10"
+                    : "text-[#E8D8BC] hover:text-amber hover:bg-amber/10"
                 )}
               >
                 {link.label}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter, Geist_Mono } from "next/font/google";
+import { Cormorant_Garamond, Inter, Geist_Mono, Spectral } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -8,6 +8,14 @@ const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
   subsets: ["latin", "cyrillic"],
   weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const spectral = Spectral({
+  variable: "--font-spectral",
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   display: "swap",
 });
@@ -38,7 +46,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className="dark scrollbar-thin">
       <body
-        className={`${cormorant.variable} ${inter.variable} ${geistMono.variable} bg-background text-foreground antialiased`}
+        className={`${cormorant.variable} ${spectral.variable} ${inter.variable} ${geistMono.variable} bg-background text-foreground antialiased`}
       >
         <QueryProvider>
           {children}

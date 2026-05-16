@@ -114,6 +114,7 @@
 
 ## 11. Frontend — страницы
 
+- [ ] **11.0** Созвездие-книга (BookConstellation): SVG-фигура по референсу (раскрытая книга, V-корешок, симметрия страниц), свечение, анимации, mouse parallax — интегрировать в hero section главной страницы
 - [ ] **11.1** Landing Page: hero, DNA preview, AI showcase, onboarding, stats, CTA
 - [ ] **11.2** Auth страницы: login, register + эмоциональный onboarding wizard
 - [ ] **11.3** Profile: Literary DNA визуализация (radial chart + particles)
