@@ -58,10 +58,10 @@
 
 ## 5. Книги
 
-- [ ] **5.1** Модель книги, seed данных (базовый каталог)
-- [ ] **5.2** Генерация embeddings для книг
-- [ ] **5.3** Semantic search через pgvector (cosine similarity)
-- [ ] **5.4** API: CRUD user_books (статус, оценка, рецензия, цитаты)
+- [x] **5.1** Модель книги, seed данных (базовый каталог)
+- [x] **5.2** Генерация embeddings для книг
+- [x] **5.3** Semantic search через pgvector (cosine similarity)
+- [x] **5.4** API: CRUD user_books (статус, оценка, рецензия, цитаты)
 
 ---
 
