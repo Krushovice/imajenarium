@@ -5,8 +5,10 @@ import uuid
 from datetime import datetime, timezone
 
 from app.ai.embeddings import LocalEmbeddingService
+from app.ai.tasks.diary_analysis import DiaryAnalysisAIService
 from app.ai.tasks.literary_dna import LiteraryDNAService as LiteraryDNAAIService
 from app.models.literary_dna import DEFAULT_METRICS, LiteraryDNA
+from app.models.reading_diary import DiaryEntry
 from app.repositories.literary_dna import LiteraryDNARepository
 from app.repositories.reading_diary import DiaryRepository
 from app.repositories.user_books import UserBookRepository
@@ -176,12 +178,14 @@ class LiteraryDNABusinessService:
         diary_repo: DiaryRepository,
         ai_service: LiteraryDNAAIService,
         embeddings: LocalEmbeddingService,
+        diary_ai_service: DiaryAnalysisAIService | None = None,
     ) -> None:
         self._dna = dna_repo
         self._books = user_book_repo
         self._diary = diary_repo
         self._ai = ai_service
         self._embed = embeddings
+        self._diary_ai = diary_ai_service
 
     async def get_or_create(self, user_id: uuid.UUID) -> LiteraryDNA:
         record = await self._dna.get_by_user_id(user_id)
@@ -292,3 +296,44 @@ class LiteraryDNABusinessService:
             "version": record.version + 1,
         })
         return await self._refresh_embedding(record)
+
+    async def update_from_diary_entry(
+        self,
+        entry: DiaryEntry,
+        book_title: str | None = None,
+    ) -> tuple[LiteraryDNA, dict]:
+        """7.2 — evolve DNA from a diary entry; marks entry as processed."""
+        if self._diary_ai is None:
+            raise RuntimeError("DiaryAnalysisAIService not configured")
+
+        record = await self.get_or_create(entry.user_id)
+        analysis = await self._diary_ai.analyze_entry(
+            entry_text=entry.content,
+            current_dna=record.metrics,
+            book_title=book_title,
+        )
+
+        dna_updated = False
+        if analysis and analysis.get("confidence", 0) >= 0.4:
+            dna_updates = analysis.get("dna_updates", {})
+            if dna_updates:
+                merged = _merge_ai_profile_into_metrics(record.metrics, dna_updates, ai_weight=0.3)
+                # Clamp all numeric values
+                clamped = {
+                    k: max(0.0, min(1.0, float(v))) if isinstance(v, (int, float)) else v
+                    for k, v in merged.items()
+                }
+                record = await self._dna.update(record, {
+                    "metrics": clamped,
+                    "version": record.version + 1,
+                })
+                record = await self._refresh_embedding(record)
+                dna_updated = True
+
+        # Store AI analysis on the entry and mark as processed
+        await self._diary.update(entry, {
+            "ai_emotional_analysis": analysis.get("emotional_analysis") or analysis,
+            "dna_impact_applied": True,
+        })
+
+        return record, analysis
