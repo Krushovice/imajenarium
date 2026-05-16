@@ -1,0 +1,239 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Neo Library — warm futurism design tokens */
+@theme inline {
+  /* Fonts */
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-cormorant);
+
+  /* Semantic colors from CSS vars */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Brand palette */
+  --color-amber: var(--amber);
+  --color-amber-light: var(--amber-light);
+  --color-amber-dark: var(--amber-dark);
+  --color-coffee: var(--coffee);
+  --color-coffee-light: var(--coffee-light);
+  --color-graphite: var(--graphite);
+  --color-graphite-light: var(--graphite-light);
+  --color-cream: var(--cream);
+  --color-gold: var(--gold);
+  --color-gold-muted: var(--gold-muted);
+
+  /* Chart */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radius */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ── Dark (default) — Neo Library dark mode ── */
+:root {
+  color-scheme: dark;
+
+  /* Brand palette */
+  --amber:        #D4873A;
+  --amber-light:  #E8A85A;
+  --amber-dark:   #A85F1A;
+  --coffee:       #6B3F2A;
+  --coffee-light: #8B5E42;
+  --graphite:     #1A1A1E;
+  --graphite-light: #2A2A30;
+  --cream:        #F5ECD7;
+  --gold:         #C9A84C;
+  --gold-muted:   #8A7240;
+
+  /* Semantic — dark defaults */
+  --background:   #0F0E0D;
+  --foreground:   #F0E8D8;
+  --card:         #1A1814;
+  --card-foreground: #F0E8D8;
+  --popover:      #1A1814;
+  --popover-foreground: #F0E8D8;
+  --primary:      #D4873A;
+  --primary-foreground: #0F0E0D;
+  --secondary:    #2A2420;
+  --secondary-foreground: #C8B89A;
+  --muted:        #1E1C18;
+  --muted-foreground: #7A6E5E;
+  --accent:       #2A2420;
+  --accent-foreground: #D4873A;
+  --destructive:  oklch(0.704 0.191 22.216);
+  --border:       rgba(212, 135, 58, 0.12);
+  --input:        rgba(212, 135, 58, 0.08);
+  --ring:         #D4873A;
+  --radius:       0.75rem;
+
+  /* Charts — warm palette */
+  --chart-1: #D4873A;
+  --chart-2: #C9A84C;
+  --chart-3: #8B5E42;
+  --chart-4: #6B3F2A;
+  --chart-5: #4A2E1C;
+
+  /* Sidebar */
+  --sidebar:          #141210;
+  --sidebar-foreground: #F0E8D8;
+  --sidebar-primary:  #D4873A;
+  --sidebar-primary-foreground: #0F0E0D;
+  --sidebar-accent:   #2A2420;
+  --sidebar-accent-foreground: #D4873A;
+  --sidebar-border:   rgba(212, 135, 58, 0.1);
+  --sidebar-ring:     #D4873A;
+}
+
+/* ── Light mode override ── */
+.light {
+  color-scheme: light;
+
+  --background:   #FAF6EF;
+  --foreground:   #1A1614;
+  --card:         #FFFFFF;
+  --card-foreground: #1A1614;
+  --popover:      #FFFFFF;
+  --popover-foreground: #1A1614;
+  --primary:      #A85F1A;
+  --primary-foreground: #FAF6EF;
+  --secondary:    #F0E8D8;
+  --secondary-foreground: #4A3020;
+  --muted:        #EDE5D4;
+  --muted-foreground: #7A6E5E;
+  --accent:       #F5ECD7;
+  --accent-foreground: #A85F1A;
+  --border:       rgba(168, 95, 26, 0.15);
+  --input:        rgba(168, 95, 26, 0.1);
+  --ring:         #A85F1A;
+  --sidebar:      #F5ECD7;
+  --sidebar-foreground: #1A1614;
+  --sidebar-primary: #A85F1A;
+  --sidebar-primary-foreground: #FAF6EF;
+  --sidebar-accent: #EDE5D4;
+  --sidebar-accent-foreground: #A85F1A;
+  --sidebar-border: rgba(168, 95, 26, 0.12);
+  --sidebar-ring:  #A85F1A;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-cormorant), Georgia, serif;
+    font-feature-settings: "kern" 1, "liga" 1, "lnum" 1;
+  }
+
+  html {
+    font-family: var(--font-inter), system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+}
+
+/* ── Glassmorphism utilities ── */
+@layer utilities {
+  .glass {
+    background: rgba(26, 24, 20, 0.6);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid rgba(212, 135, 58, 0.12);
+  }
+
+  .glass-light {
+    background: rgba(245, 236, 215, 0.7);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    border: 1px solid rgba(168, 95, 26, 0.15);
+  }
+
+  .ambient-glow {
+    box-shadow: 0 0 60px rgba(212, 135, 58, 0.08), 0 0 120px rgba(201, 168, 76, 0.04);
+  }
+
+  .text-gradient-amber {
+    background: linear-gradient(135deg, #D4873A 0%, #C9A84C 50%, #E8A85A 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-cream {
+    background: linear-gradient(135deg, #F5ECD7 0%, #C8B89A 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .book-card-hover {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .book-card-hover:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 20px 60px rgba(212, 135, 58, 0.15);
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212, 135, 58, 0.3) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(212, 135, 58, 0.3);
+    border-radius: 2px;
+  }
+}

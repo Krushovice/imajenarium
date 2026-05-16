@@ -104,11 +104,11 @@
 
 ## 10. Frontend — основа
 
-- [ ] **10.1** Next.js 15 setup: TypeScript, TailwindCSS, shadcn/ui, ESLint
-- [ ] **10.2** Framer Motion setup, базовые анимационные утилиты
-- [ ] **10.3** Zustand stores, TanStack Query setup, Zod schemas
-- [ ] **10.4** Дизайн-система: цвета (amber/brown/graphite), шрифты (Cormorant + Inter), компоненты
-- [ ] **10.5** Layout: Header, Footer, базовая навигация
+- [x] **10.1** Next.js 15 setup: TypeScript, TailwindCSS, shadcn/ui, ESLint
+- [x] **10.2** Framer Motion setup, базовые анимационные утилиты
+- [x] **10.3** Zustand stores, TanStack Query setup, Zod schemas
+- [x] **10.4** Дизайн-система: цвета (amber/brown/graphite), шрифты (Cormorant + Inter), компоненты
+- [x] **10.5** Layout: Header, Footer, базовая навигация
 
 ---
 
@@ -153,4 +153,4 @@
 
 ## Статус
 
-Текущий пункт: **10.1**
+Текущий пункт: **11.1**
