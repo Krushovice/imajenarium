@@ -11,14 +11,42 @@ from app.core.config import settings
 from app.core.database import engine
 from app.core.limiter import limiter
 from app.core.logging import setup_logging
+from app.core.metrics import instrumentator
 from app.core.redis import close_redis
 from app.middleware.security import SecurityHeadersMiddleware
+
+if settings.sentry_dsn:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        environment=settings.environment,
+        traces_sample_rate=settings.sentry_traces_sample_rate,
+        profiles_sample_rate=settings.sentry_profiles_sample_rate,
+        integrations=[FastApiIntegration(), SqlalchemyIntegration()],
+        send_default_pii=False,
+    )
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     setup_logging()
+
+    # Telegram bot + webhook
+    from app.telegram.bot import init_telegram, shutdown_telegram
+    from app.telegram.scheduler import start_scheduler, stop_scheduler
+
+    await init_telegram()
+
+    if settings.telegram_bot_token:
+        start_scheduler()
+
     yield
+
+    stop_scheduler()
+    await shutdown_telegram()
     await engine.dispose()
     await close_redis()
 
@@ -45,3 +73,5 @@ app.add_middleware(
 )
 
 app.include_router(v1_router)
+
+instrumentator.instrument(app).expose(app, include_in_schema=False, tags=["monitoring"])

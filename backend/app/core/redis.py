@@ -27,6 +27,11 @@ async def get_redis() -> AsyncGenerator[aioredis.Redis, None]:
         yield client
 
 
+def get_redis_client() -> aioredis.Redis:
+    """Return a Redis client bound to the shared pool (not a context manager)."""
+    return aioredis.Redis(connection_pool=_get_pool())
+
+
 async def close_redis() -> None:
     global _pool
     if _pool:

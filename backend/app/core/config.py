@@ -100,6 +100,17 @@ class Settings(BaseSettings):
     # Telegram
     telegram_bot_token: str | None = None
     telegram_webhook_url: str | None = None
+    telegram_secret_token: str = "change-me-telegram-secret"
+    telegram_mini_app_url: str | None = None
+    telegram_link_token_ttl: int = 600  # 10 min
+
+    # Scheduler timezone
+    scheduler_timezone: str = "UTC"
+
+    # Sentry
+    sentry_dsn: str | None = None
+    sentry_traces_sample_rate: float = 0.1
+    sentry_profiles_sample_rate: float = 0.1
 
 
 @lru_cache
