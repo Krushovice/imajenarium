@@ -52,7 +52,7 @@ def upgrade() -> None:
         sa.Column(
             "emotional_tags",
             postgresql.JSONB(astext_type=sa.Text()),
-            server_default="'[]'",
+            server_default=sa.text("'[]'::jsonb"),
             nullable=False,
         ),
         sa.Column("mood", sa.String(100), nullable=True),
