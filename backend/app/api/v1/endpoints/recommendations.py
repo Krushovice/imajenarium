@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.ai import get_embedding_service
 from app.ai.tasks.recommendation import RecommendationAIService
 from app.api.deps import ActiveUser, DBSession
+from app.core.redis import RedisDep
 from app.models.enums import RecommendationSource
 from app.repositories.books import BookRepository
 from app.repositories.literary_dna import LiteraryDNARepository
@@ -32,7 +33,7 @@ router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 # ---------------------------------------------------------------------------
 
 
-def _make_svc(db: DBSession) -> RecommendationService:
+def _make_svc(db: DBSession, redis: RedisDep) -> RecommendationService:
     from app.ai import get_active_provider, get_prompt_registry
 
     ai = RecommendationAIService(get_active_provider(), get_prompt_registry())
@@ -43,6 +44,7 @@ def _make_svc(db: DBSession) -> RecommendationService:
         user_book_repo=UserBookRepository(db),
         ai=ai,
         embeddings=get_embedding_service(),
+        redis=redis,
     )
 
 
@@ -193,6 +195,7 @@ async def explain(
 @router.post(
     "/mark-seen",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Mark recommendations as seen",
 )
 async def mark_seen(
@@ -206,6 +209,7 @@ async def mark_seen(
 @router.delete(
     "/{rec_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Dismiss a recommendation",
 )
 async def dismiss(

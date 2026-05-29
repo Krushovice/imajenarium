@@ -159,7 +159,8 @@ class UserBookService:
             "finished_at": finished_at,
             "is_private": is_private,
         }
-        return await self._user_books.create(data)
+        created = await self._user_books.create(data)
+        return await self._user_books.get_with_book(created.id)  # type: ignore[return-value]
 
     async def update_shelf_entry(
         self,

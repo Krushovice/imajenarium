@@ -13,6 +13,8 @@ from app.repositories.user_books import UserBookRepository
 from app.schemas.literary_dna import (
     LiteraryDNAOut,
     LiteraryDNAPatch,
+    NextQuestionRequest,
+    NextQuestionResponse,
     OnboardingAnswers,
     OnboardingQuestion,
     ReviewDNAUpdateRequest,
@@ -42,6 +44,22 @@ ServiceDep = Annotated[LiteraryDNABusinessService, Depends(_make_service)]
 )
 async def get_onboarding_questions() -> list[dict]:
     return ONBOARDING_QUESTIONS
+
+
+@router.post(
+    "/onboarding/next-question",
+    response_model=NextQuestionResponse,
+    summary="Get next conversational onboarding question based on answers so far",
+)
+async def get_next_onboarding_question(
+    body: NextQuestionRequest,
+    user: ActiveUser,
+    svc: ServiceDep,
+) -> NextQuestionResponse:
+    question = await svc.generate_next_onboarding_question(body.answers_so_far)
+    if question is None:
+        return NextQuestionResponse(done=True)
+    return NextQuestionResponse(done=False, question=OnboardingQuestion(**question))
 
 
 @router.post(

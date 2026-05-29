@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 
 from app.ai import get_active_provider, get_embedding_service, get_prompt_registry
 from app.ai.tasks.diary_analysis import DiaryAnalysisAIService
@@ -23,6 +24,8 @@ from app.schemas.reading_diary import (
 )
 from app.services.literary_dna import LiteraryDNABusinessService
 from app.services.reading_diary import DiaryService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/diary", tags=["reading-diary"])
 
@@ -54,6 +57,35 @@ DiarySvcDep = Annotated[DiaryService, Depends(_make_diary_svc)]
 DNASvcDep = Annotated[LiteraryDNABusinessService, Depends(_make_dna_svc)]
 
 
+async def _bg_dna_update_from_diary(user_id: uuid.UUID, entry_id: uuid.UUID) -> None:
+    """Background: re-fetch entry and evolve DNA from diary content."""
+    from app.core.database import AsyncSessionFactory
+
+    async with AsyncSessionFactory() as db:
+        diary_repo = DiaryRepository(db)
+        book_repo = BookRepository(db)
+        entry = await diary_repo.get(entry_id)
+        if entry is None:
+            return
+        book_title: str | None = None
+        if entry.book_id:
+            book = await book_repo.get(entry.book_id)
+            if book:
+                book_title = book.title
+        dna_svc = LiteraryDNABusinessService(
+            dna_repo=LiteraryDNARepository(db),
+            user_book_repo=UserBookRepository(db),
+            diary_repo=diary_repo,
+            ai_service=LiteraryDNAAIService(get_active_provider(), get_prompt_registry()),
+            embeddings=get_embedding_service(),
+            diary_ai_service=DiaryAnalysisAIService(get_active_provider(), get_prompt_registry()),
+        )
+        try:
+            await dna_svc.update_from_diary_entry(entry, book_title=book_title)
+        except Exception as exc:
+            logger.warning("Background DNA update from diary failed: %s", exc)
+
+
 # ---------------------------------------------------------------------------
 # 7.1 — CRUD
 # ---------------------------------------------------------------------------
@@ -69,6 +101,7 @@ async def create_entry(
     body: DiaryEntryCreate,
     user: ActiveUser,
     svc: DiarySvcDep,
+    background_tasks: BackgroundTasks,
 ) -> DiaryEntryOut:
     try:
         entry = await svc.create_entry(
@@ -82,6 +115,7 @@ async def create_entry(
         )
     except EntityNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    background_tasks.add_task(_bg_dna_update_from_diary, user.id, entry.id)
     return entry  # type: ignore[return-value]
 
 
@@ -150,6 +184,7 @@ async def update_entry(
 @router.delete(
     "/{entry_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="7.1 — Delete diary entry",
 )
 async def delete_entry(

@@ -94,6 +94,7 @@ async def accept_friend_request(
 @router.delete(
     "/friends/{friendship_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="8.1 — Decline or cancel friend request / unfriend",
 )
 async def decline_or_cancel(

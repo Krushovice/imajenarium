@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
+
+import redis.asyncio as aioredis
 
 from app.ai.embeddings import LocalEmbeddingService
 from app.ai.tasks.recommendation import RecommendationAIService
@@ -16,6 +20,7 @@ from app.repositories.user_books import UserBookRepository
 logger = logging.getLogger(__name__)
 
 _REC_TTL_DAYS = 7
+_EPHEMERAL_CACHE_TTL = 1800  # 30 min
 
 
 def _expires() -> datetime:
@@ -31,6 +36,7 @@ class RecommendationService:
         user_book_repo: UserBookRepository,
         ai: RecommendationAIService,
         embeddings: LocalEmbeddingService,
+        redis: aioredis.Redis | None = None,
     ) -> None:
         self._rec = rec_repo
         self._books = book_repo
@@ -38,6 +44,7 @@ class RecommendationService:
         self._user_books = user_book_repo
         self._ai = ai
         self._embed = embeddings
+        self._redis = redis
 
     # ------------------------------------------------------------------
     # 6.1 — DNA semantic similarity via pgvector
@@ -90,8 +97,24 @@ class RecommendationService:
         context: str = "",
         count: int = 5,
     ) -> list[dict]:
-        suggestions = await self._ai.recommend_by_mood(mood, context=context, count=count)
-        return await self._enrich_suggestions(suggestions)
+        dna = await self._dna.get_by_user_id(user_id)
+        literary_dna = dna.metrics if dna else {}
+        cache_key = f"rec:mood:{user_id}:{hashlib.md5(f'{mood}:{context}:{count}'.encode()).hexdigest()}"
+
+        if self._redis is not None:
+            cached = await self._redis.get(cache_key)
+            if cached:
+                return json.loads(cached)
+
+        suggestions = await self._ai.recommend_by_mood(
+            mood, context=context, count=count, literary_dna=literary_dna
+        )
+        result = await self._enrich_suggestions(suggestions)
+
+        if self._redis is not None and result:
+            await self._redis.set(cache_key, json.dumps(result, default=str), ex=_EPHEMERAL_CACHE_TTL)
+
+        return result
 
     # ------------------------------------------------------------------
     # 6.3 — Collaborative filtering by similar DNA
@@ -181,10 +204,21 @@ class RecommendationService:
     async def recommend_from_prompt(
         self, user_id: uuid.UUID, user_prompt: str, count: int = 5
     ) -> list[dict]:
+        if self._redis is not None:
+            cache_key = f"rec:prompt:{user_id}:{hashlib.md5(f'{user_prompt}:{count}'.encode()).hexdigest()}"
+            cached = await self._redis.get(cache_key)
+            if cached:
+                return json.loads(cached)
+
         dna = await self._dna.get_by_user_id(user_id)
         literary_dna = dna.metrics if dna else {}
         suggestions = await self._ai.recommend_from_prompt(user_prompt, literary_dna, count=count)
-        return await self._enrich_suggestions(suggestions)
+        result = await self._enrich_suggestions(suggestions)
+
+        if self._redis is not None and result:
+            await self._redis.set(cache_key, json.dumps(result, default=str), ex=_EPHEMERAL_CACHE_TTL)
+
+        return result
 
     # ------------------------------------------------------------------
     # 6.6 — AI explanation for a stored recommendation

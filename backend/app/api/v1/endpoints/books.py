@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 
-from app.ai import get_embedding_service
+from app.ai import get_active_provider, get_embedding_service, get_prompt_registry
 from app.api.deps import ActiveUser, DBSession
 from app.models.enums import BookStatus
 from app.repositories.books import BookRepository
@@ -20,6 +21,8 @@ from app.schemas.books import (
     UserLibraryResponse,
 )
 from app.services.books import BookService, UserBookService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -41,6 +44,52 @@ def _make_user_book_svc(db: DBSession) -> UserBookService:
 
 BookSvcDep = Annotated[BookService, Depends(_make_book_svc)]
 UserBookSvcDep = Annotated[UserBookService, Depends(_make_user_book_svc)]
+
+
+async def _bg_dna_update_from_review(
+    user_id: uuid.UUID, book_title: str, review_text: str
+) -> None:
+    from app.ai.tasks.literary_dna import LiteraryDNAService as LiteraryDNAAIService
+    from app.core.database import AsyncSessionFactory
+    from app.repositories.literary_dna import LiteraryDNARepository
+    from app.repositories.reading_diary import DiaryRepository
+    from app.repositories.user_books import UserBookRepository
+    from app.services.literary_dna import LiteraryDNABusinessService
+
+    async with AsyncSessionFactory() as db:
+        svc = LiteraryDNABusinessService(
+            dna_repo=LiteraryDNARepository(db),
+            user_book_repo=UserBookRepository(db),
+            diary_repo=DiaryRepository(db),
+            ai_service=LiteraryDNAAIService(get_active_provider(), get_prompt_registry()),
+            embeddings=get_embedding_service(),
+        )
+        try:
+            await svc.update_from_review(user_id, book_title, review_text)
+        except Exception as exc:
+            logger.warning("Background DNA update from review failed: %s", exc)
+
+
+async def _bg_dna_recompute(user_id: uuid.UUID) -> None:
+    from app.ai.tasks.literary_dna import LiteraryDNAService as LiteraryDNAAIService
+    from app.core.database import AsyncSessionFactory
+    from app.repositories.literary_dna import LiteraryDNARepository
+    from app.repositories.reading_diary import DiaryRepository
+    from app.repositories.user_books import UserBookRepository
+    from app.services.literary_dna import LiteraryDNABusinessService
+
+    async with AsyncSessionFactory() as db:
+        svc = LiteraryDNABusinessService(
+            dna_repo=LiteraryDNARepository(db),
+            user_book_repo=UserBookRepository(db),
+            diary_repo=DiaryRepository(db),
+            ai_service=LiteraryDNAAIService(get_active_provider(), get_prompt_registry()),
+            embeddings=get_embedding_service(),
+        )
+        try:
+            await svc.recompute(user_id)
+        except Exception as exc:
+            logger.warning("Background DNA recompute failed: %s", exc)
 
 
 # ---------------------------------------------------------------------------
@@ -159,8 +208,9 @@ async def add_to_shelf(
     body: UserBookCreate,
     user: ActiveUser,
     svc: UserBookSvcDep,
+    background_tasks: BackgroundTasks,
 ) -> UserBookOut:
-    return await svc.add_to_shelf(  # type: ignore[return-value]
+    result = await svc.add_to_shelf(  # type: ignore[return-value]
         user.id,
         book_id,
         status=body.status,
@@ -171,6 +221,12 @@ async def add_to_shelf(
         finished_at=body.finished_at,
         is_private=body.is_private,
     )
+    if body.review:
+        book_title = result.book.title if result.book else "Unknown"
+        background_tasks.add_task(_bg_dna_update_from_review, user.id, book_title, body.review)
+    elif body.rating is not None:
+        background_tasks.add_task(_bg_dna_recompute, user.id)
+    return result
 
 
 @router.get(
@@ -196,14 +252,22 @@ async def update_shelf_entry(
     body: UserBookUpdate,
     user: ActiveUser,
     svc: UserBookSvcDep,
+    background_tasks: BackgroundTasks,
 ) -> UserBookOut:
     updates = body.model_dump(exclude_none=True)
-    return await svc.update_shelf_entry(user.id, book_id, updates)  # type: ignore[return-value]
+    result = await svc.update_shelf_entry(user.id, book_id, updates)  # type: ignore[return-value]
+    if updates.get("review"):
+        book_title = result.book.title if result.book else "Unknown"
+        background_tasks.add_task(_bg_dna_update_from_review, user.id, book_title, updates["review"])
+    elif updates.get("rating") is not None:
+        background_tasks.add_task(_bg_dna_recompute, user.id)
+    return result
 
 
 @router.delete(
     "/{book_id}/shelf",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="5.4 — Remove book from shelf",
 )
 async def remove_from_shelf(

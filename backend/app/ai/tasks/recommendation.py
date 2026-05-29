@@ -18,11 +18,11 @@ class RecommendationAIService:
     async def recommend_by_dna(self, literary_dna: dict, count: int = 5) -> list[dict]:
         prompt = self._prompts.get(
             "recommendations", "by_dna",
-            literary_dna=json.dumps(literary_dna, ensure_ascii=False, indent=2),
+            literary_dna=json.dumps(literary_dna, ensure_ascii=False, separators=(",", ":")),
             count=str(count),
         )
         resp = await self._provider.chat(
-            [ChatMessage(role="user", content=prompt)], temperature=0.8
+            [ChatMessage(role="user", content=prompt)], temperature=0.8, max_tokens=512
         )
         try:
             return json.loads(extract_json(resp.content)).get("recommendations", [])
@@ -30,15 +30,18 @@ class RecommendationAIService:
             logger.error("recommend_by_dna parse failed: %s | raw: %s", exc, resp.content[:200])
             return []
 
-    async def recommend_by_mood(self, mood: str, context: str = "", count: int = 5) -> list[dict]:
+    async def recommend_by_mood(
+        self, mood: str, context: str = "", count: int = 5, literary_dna: dict | None = None
+    ) -> list[dict]:
         prompt = self._prompts.get(
             "recommendations", "by_mood",
             mood=mood,
             context=context,
             count=str(count),
+            literary_dna=json.dumps(literary_dna or {}, ensure_ascii=False, separators=(",", ":")),
         )
         resp = await self._provider.chat(
-            [ChatMessage(role="user", content=prompt)], temperature=0.8
+            [ChatMessage(role="user", content=prompt)], temperature=0.8, max_tokens=512
         )
         try:
             return json.loads(extract_json(resp.content)).get("recommendations", [])
@@ -52,11 +55,11 @@ class RecommendationAIService:
         import json as _json
         prompt = self._prompts.get(
             "recommendations", "from_reviews",
-            reviews=_json.dumps(reviews, ensure_ascii=False, indent=2),
+            reviews=_json.dumps(reviews, ensure_ascii=False, separators=(",", ":")),
             count=str(count),
         )
         resp = await self._provider.chat(
-            [ChatMessage(role="user", content=prompt)], temperature=0.8
+            [ChatMessage(role="user", content=prompt)], temperature=0.8, max_tokens=512
         )
         try:
             return _json.loads(extract_json(resp.content)).get("recommendations", [])
@@ -70,11 +73,11 @@ class RecommendationAIService:
         prompt = self._prompts.get(
             "recommendations", "ai_prompt",
             user_prompt=user_prompt,
-            literary_dna=json.dumps(literary_dna, ensure_ascii=False, indent=2),
+            literary_dna=json.dumps(literary_dna, ensure_ascii=False, separators=(",", ":")),
             count=str(count),
         )
         resp = await self._provider.chat(
-            [ChatMessage(role="user", content=prompt)], temperature=0.9
+            [ChatMessage(role="user", content=prompt)], temperature=0.9, max_tokens=512
         )
         try:
             return json.loads(extract_json(resp.content)).get("recommendations", [])
@@ -89,7 +92,7 @@ class RecommendationAIService:
             "recommendations", "explanation",
             book_title=book_title,
             book_author=book_author,
-            literary_dna=json.dumps(literary_dna, ensure_ascii=False, indent=2),
+            literary_dna=json.dumps(literary_dna, ensure_ascii=False, separators=(",", ":")),
         )
         resp = await self._provider.chat(
             [ChatMessage(role="user", content=prompt)], temperature=0.7, max_tokens=512

@@ -29,6 +29,24 @@ class LiteraryDNAService:
             logger.error("build_profile parse failed: %s | raw: %s", exc, resp.content[:200])
             return {}
 
+    async def generate_next_question(self, answers_so_far: dict) -> dict | None:
+        prompt = self._prompts.get(
+            "literary_dna", "next_onboarding_question",
+            answers_so_far=json.dumps(answers_so_far, ensure_ascii=False, indent=2),
+            count_so_far=str(len(answers_so_far)),
+        )
+        resp = await self._provider.chat(
+            [ChatMessage(role="user", content=prompt)], temperature=0.5, max_tokens=512
+        )
+        try:
+            data = json.loads(extract_json(resp.content))
+            if data.get("done"):
+                return None
+            return data.get("question")
+        except Exception as exc:
+            logger.error("generate_next_question parse failed: %s | raw: %s", exc, resp.content[:200])
+            return None
+
     async def update_from_review(
         self, current_dna: dict, book_title: str, review_text: str
     ) -> dict:

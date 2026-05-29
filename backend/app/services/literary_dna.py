@@ -284,6 +284,12 @@ class LiteraryDNABusinessService:
         })
         return await self._refresh_embedding(record)
 
+    async def generate_next_onboarding_question(self, answers_so_far: dict) -> dict | None:
+        """Returns next question dict or None when onboarding is complete (7+ answers)."""
+        if len(answers_so_far) >= 7:
+            return None
+        return await self._ai.generate_next_question(answers_so_far)
+
     async def patch_metrics(self, user_id: uuid.UUID, updates: dict[str, float]) -> LiteraryDNA:
         """4.2 — manual partial update of numeric metric axes."""
         record = await self.get_or_create(user_id)
