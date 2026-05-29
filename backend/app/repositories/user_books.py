@@ -17,6 +17,12 @@ class UserBookRepository(BaseRepository[UserBook]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session)
 
+    async def get_with_book(self, id: uuid.UUID) -> UserBook | None:
+        result = await self.session.execute(
+            select(UserBook).where(UserBook.id == id).options(selectinload(UserBook.book))
+        )
+        return result.scalar_one_or_none()
+
     async def get_by_user_and_book(
         self, user_id: uuid.UUID, book_id: uuid.UUID
     ) -> UserBook | None:

@@ -35,7 +35,7 @@ class Friendship(BaseModel):
     status: Mapped[FriendshipStatus] = mapped_column(
         Enum(FriendshipStatus, name="friendshipstatus"),
         nullable=False,
-        server_default=FriendshipStatus.PENDING.value,
+        default=FriendshipStatus.PENDING,
     )
     literary_compatibility_score: Mapped[float | None] = mapped_column(Float, nullable=True)
 

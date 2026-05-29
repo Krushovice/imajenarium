@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, String, Text
+from sqlalchemy import Boolean, ForeignKey, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,8 +28,8 @@ class DiaryEntry(BaseModel):
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     mood: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    emotion_tags: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="'[]'")
-    quotes: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="'[]'")
+    emotion_tags: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    quotes: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     ai_emotional_analysis: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     dna_impact_applied: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"

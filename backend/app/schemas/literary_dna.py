@@ -37,3 +37,12 @@ class OnboardingAnswers(BaseModel):
 class ReviewDNAUpdateRequest(BaseModel):
     book_title: str = Field(min_length=1, max_length=500)
     review_text: str = Field(min_length=10, max_length=10000)
+
+
+class NextQuestionRequest(BaseModel):
+    answers_so_far: dict[str, str | list[str]] = Field(default_factory=dict)
+
+
+class NextQuestionResponse(BaseModel):
+    done: bool
+    question: OnboardingQuestion | None = None

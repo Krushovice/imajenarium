@@ -4,7 +4,7 @@ import uuid
 from datetime import date
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Date, Enum, ForeignKey, Integer, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Integer, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -29,7 +29,7 @@ class UserBook(BaseModel):
     status: Mapped[BookStatus] = mapped_column(Enum(BookStatus, name="bookstatus"), nullable=False)
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 1..10
     review: Mapped[str | None] = mapped_column(Text, nullable=True)
-    quotes: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="'[]'")
+    quotes: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     started_at: Mapped[date | None] = mapped_column(Date, nullable=True)
     finished_at: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_private: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")

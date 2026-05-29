@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, String, Text
+from sqlalchemy import DateTime, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -27,7 +27,7 @@ class NewsFeedItem(BaseModel):
     # AI-generated
     ai_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     emotional_tags: Mapped[list] = mapped_column(
-        JSONB, nullable=False, server_default="'[]'"
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
     )
     mood: Mapped[str | None] = mapped_column(String(100), nullable=True)
     atmosphere: Mapped[str | None] = mapped_column(String(200), nullable=True)

@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, ForeignKey, Integer
+from sqlalchemy import DateTime, ForeignKey, Integer, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -42,7 +42,7 @@ class LiteraryDNA(BaseModel):
         nullable=False,
         index=True,
     )
-    metrics: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    metrics: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIM), nullable=True)
     version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     last_computed_at: Mapped[datetime | None] = mapped_column(
