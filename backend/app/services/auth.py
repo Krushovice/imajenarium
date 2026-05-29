@@ -26,6 +26,9 @@ from app.schemas.auth import (
 )
 
 _REFRESH_PREFIX = "refresh:"
+_FAIL_PREFIX = "login_fails:"
+_FAIL_LIMIT = 6
+_FAIL_TTL = 900  # 15 min lockout window
 _GUEST_DOMAIN = "@guest.internal"
 _TELEGRAM_DOMAIN = "@telegram.internal"
 
@@ -66,13 +69,25 @@ class AuthService:
         return user, access, refresh
 
     async def login(self, data: LoginRequest) -> tuple[User, str, str]:
-        user = await self._users.get_by_email(data.email.lower())
-        if not user or not user.hashed_password:
+        email = data.email.lower()
+        fail_key = f"{_FAIL_PREFIX}{email}"
+
+        fails_raw = await self._redis.get(fail_key)
+        if fails_raw and int(fails_raw) >= _FAIL_LIMIT:
+            raise AuthError("Too many failed attempts. Try again in 15 minutes.", 429)
+
+        user = await self._users.get_by_email(email)
+        if not user or not user.hashed_password or not verify_password(data.password, user.hashed_password):
+            pipe = self._redis.pipeline()
+            pipe.incr(fail_key)
+            pipe.expire(fail_key, _FAIL_TTL)
+            await pipe.execute()
             raise AuthError("Invalid credentials", 401)
-        if not verify_password(data.password, user.hashed_password):
-            raise AuthError("Invalid credentials", 401)
+
         if not user.is_active:
             raise AuthError("Account disabled", 403)
+
+        await self._redis.delete(fail_key)
         access, refresh = await self._issue_tokens(user)
         return user, access, refresh
 
