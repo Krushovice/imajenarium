@@ -6,6 +6,11 @@ authors = []
 readme = "README.md"
 packages = [{include = "app"}]
 
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
 [tool.poetry.dependencies]
 python = "^3.12"
 fastapi = "^0.115.0"
@@ -13,7 +18,7 @@ uvicorn = {extras = ["standard"], version = "^0.32.0"}
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
 asyncpg = "^0.30.0"
 alembic = "^1.14.0"
-pydantic = "^2.10.0"
+pydantic = {extras = ["email"], version = "^2.10.0"}
 pydantic-settings = "^2.6.0"
 redis = {extras = ["hiredis"], version = "^5.2.0"}
 pgvector = "^0.3.6"
@@ -22,11 +27,16 @@ python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 bcrypt = "^4.0"
 python-multipart = "^0.0.19"
 slowapi = "^0.1.9"
+torch = {version = ">=2.0,<3.0", source = "pytorch-cpu"}
 sentence-transformers = "^3.3.0"
 openai = "^1.0"
 anthropic = "^0.40"
 mistralai = "^1.0"
 google-generativeai = "^0.8"
+aiogram = "^3.17"
+apscheduler = "^3.10"
+prometheus-fastapi-instrumentator = "^7.0"
+sentry-sdk = {extras = ["fastapi"], version = "^2.0"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.0"
@@ -35,6 +45,7 @@ pytest-cov = "^6.0.0"
 httpx = "^0.28.0"
 ruff = "^0.8.0"
 mypy = "^1.13.0"
+fakeredis = {version = ">=2.26", extras = ["lua"]}
 
 [build-system]
 requires = ["poetry-core"]
@@ -49,4 +60,5 @@ select = ["E", "F", "I", "N", "UP"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
 testpaths = ["tests"]
