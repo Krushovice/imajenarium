@@ -27,11 +27,21 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       setUser: (user) => set({ user, isAuthenticated: true }),
       setAccessToken: (accessToken) => set({ accessToken }),
-      logout: () => set({ user: null, accessToken: null, isAuthenticated: false }),
+      logout: () => {
+        import("@/lib/api/client").then(({ apiClient }) => {
+          apiClient.post("/auth/logout").catch(() => {});
+        });
+        set({ user: null, accessToken: null, isAuthenticated: false });
+      },
     }),
     {
       name: "auth-storage",
       partialize: (state) => ({ user: state.user, accessToken: state.accessToken }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.user && state?.accessToken) {
+          state.isAuthenticated = true;
+        }
+      },
     }
   )
 );

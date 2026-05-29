@@ -32,7 +32,7 @@ export function Footer() {
                 Book Imaginarium
               </span>
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-base text-[#C4A882] leading-relaxed">
               Персональный литературный мир, построенный на эмоциях и атмосфере.
             </p>
           </div>
@@ -40,7 +40,7 @@ export function Footer() {
           {/* Links */}
           {Object.entries(FOOTER_LINKS).map(([category, links]) => (
             <div key={category}>
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-amber">
                 {category}
               </h3>
               <ul className="space-y-2">
@@ -48,7 +48,7 @@ export function Footer() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      className="text-base text-[#C4A882] hover:text-amber-light transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -62,10 +62,10 @@ export function Footer() {
         <Separator className="my-8 bg-border" />
 
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-[#B09060]">
             © {new Date().getFullYear()} Book Imaginarium. Все права защищены.
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-[#B09060]">
             Создано с любовью к книгам
           </p>
         </div>

@@ -28,12 +28,35 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (res) => res,
   async (error) => {
-    if (error.response?.status === 401) {
+    const config = error.config;
+    if (error.response?.status === 401 && !config?._retry) {
+      config._retry = true;
       try {
-        await apiClient.post("/auth/refresh");
-        return apiClient(error.config);
+        const refreshResp = await apiClient.post("/auth/refresh");
+        const newToken: string = refreshResp.data.access_token;
+
+        // Persist new access token so subsequent requests pick it up
+        if (typeof window !== "undefined") {
+          const stored = localStorage.getItem("auth-storage");
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              if (parsed.state) {
+                parsed.state.accessToken = newToken;
+                localStorage.setItem("auth-storage", JSON.stringify(parsed));
+              }
+            } catch {
+              // ignore malformed storage
+            }
+          }
+        }
+
+        config.headers.Authorization = `Bearer ${newToken}`;
+        return apiClient(config);
       } catch {
-        window.location.href = "/auth/login";
+        if (typeof window !== "undefined") {
+          window.location.href = "/auth/login";
+        }
       }
     }
     return Promise.reject(error);
