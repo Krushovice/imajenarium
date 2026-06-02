@@ -19,6 +19,7 @@ import { fadeInDown } from "@/lib/animations";
 
 const AUTH_NAV_LINKS = [
   { href: "/books", label: "Каталог" },
+  { href: "/recommendations", label: "Для тебя" },
   { href: "/discover", label: "Открытия" },
   { href: "/diary", label: "Дневник" },
   { href: "/social", label: "Друзья" },
