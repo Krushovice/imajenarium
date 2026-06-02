@@ -282,6 +282,40 @@ class AuthService:
         return user.email.endswith(_GUEST_DOMAIN)
 
     # ------------------------------------------------------------------
+    # 2.6 Password reset
+    # ------------------------------------------------------------------
+
+    _RESET_PREFIX = "pwd_reset:"
+    _RESET_TTL = 3600  # 1 hour
+
+    async def forgot_password(self, email: str) -> None:
+        """Generate a reset token and store in Redis. Always succeeds (no user enumeration)."""
+        import logging
+        import secrets
+        logger = logging.getLogger(__name__)
+
+        user = await self._users.get_by_email(email.lower())
+        if user is None or not user.hashed_password:
+            return
+
+        token = secrets.token_urlsafe(32)
+        await self._redis.set(f"{self._RESET_PREFIX}{token}", str(user.id), ex=self._RESET_TTL)
+        logger.info("Password reset token for %s: %s", email, token)
+
+    async def reset_password(self, token: str, new_password: str) -> None:
+        key = f"{self._RESET_PREFIX}{token}"
+        user_id = await self._redis.get(key)
+        if user_id is None:
+            raise AuthError("Invalid or expired reset token", 400)
+
+        user = await self._users.get(uuid.UUID(user_id if isinstance(user_id, str) else user_id.decode()))
+        if not user:
+            raise AuthError("User not found", 404)
+
+        await self._users.update(user, {"hashed_password": hash_password(new_password)})
+        await self._redis.delete(key)
+
+    # ------------------------------------------------------------------
     # Token internals
     # ------------------------------------------------------------------
 

@@ -12,9 +12,12 @@ from app.core.redis import get_redis
 from app.repositories.users import UserRepository
 from app.schemas.auth import (
     AuthResponse,
+    ForgotPasswordRequest,
     GoogleCallbackRequest,
     LoginRequest,
+    MessageResponse,
     RegisterRequest,
+    ResetPasswordRequest,
     TelegramAuthRequest,
     TokenResponse,
     UserOut,
@@ -245,3 +248,30 @@ async def create_guest(
 @router.get("/me", response_model=UserOut)
 async def me(current_user: ActiveUser) -> UserOut:
     return UserOut.model_validate(current_user)
+
+
+# ------------------------------------------------------------------
+# Password reset
+# ------------------------------------------------------------------
+
+@router.post("/forgot-password", response_model=MessageResponse)
+@limiter.limit("3/minute")
+async def forgot_password(
+    request: Request,
+    body: ForgotPasswordRequest,
+    svc: ServiceDep,
+) -> MessageResponse:
+    await svc.forgot_password(body.email)
+    return MessageResponse(message="Если аккаунт с таким email существует, ссылка для сброса пароля была отправлена.")
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+async def reset_password(
+    body: ResetPasswordRequest,
+    svc: ServiceDep,
+) -> MessageResponse:
+    try:
+        await svc.reset_password(body.token, body.new_password)
+    except AuthError as e:
+        raise _http(e)
+    return MessageResponse(message="Пароль успешно изменён. Войди с новым паролем.")
