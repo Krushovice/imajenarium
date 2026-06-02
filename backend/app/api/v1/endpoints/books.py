@@ -14,6 +14,8 @@ from app.repositories.user_books import UserBookRepository
 from app.schemas.books import (
     BookOut,
     BookSearchResult,
+    FriendQuoteAuthor,
+    FriendQuoteOut,
     SemanticSearchRequest,
     UserBookCreate,
     UserBookOut,
@@ -276,3 +278,41 @@ async def remove_from_shelf(
     svc: UserBookSvcDep,
 ) -> None:
     await svc.remove_from_shelf(user.id, book_id)
+
+
+@router.get(
+    "/{book_id}/friends-quotes",
+    response_model=list[FriendQuoteOut],
+    summary="Get quotes from friends for a specific book",
+)
+async def get_friends_quotes(
+    book_id: uuid.UUID,
+    user: ActiveUser,
+    db: DBSession,
+) -> list[FriendQuoteOut]:
+    from app.repositories.friendships import FriendshipRepository
+
+    friendship_repo = FriendshipRepository(db)
+    user_book_repo = UserBookRepository(db)
+
+    friends = await friendship_repo.get_friends(user.id)
+    friend_ids = [f.id for f in friends]
+    entries = await user_book_repo.get_friends_quotes_for_book(book_id, friend_ids)
+
+    result = []
+    for entry in entries:
+        if entry.user is None:
+            continue
+        result.append(
+            FriendQuoteOut(
+                author=FriendQuoteAuthor(
+                    id=entry.user.id,
+                    username=entry.user.username,
+                    display_name=entry.user.display_name,
+                    avatar_url=entry.user.avatar_url,
+                ),
+                quotes=list(entry.quotes),
+                rating=entry.rating,
+            )
+        )
+    return result

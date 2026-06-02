@@ -107,3 +107,16 @@ class UserLibraryResponse(BaseModel):
     total: int
     offset: int
     limit: int
+
+
+class FriendQuoteAuthor(BaseModel):
+    id: uuid.UUID
+    username: str
+    display_name: str | None
+    avatar_url: str | None
+
+
+class FriendQuoteOut(BaseModel):
+    author: FriendQuoteAuthor
+    quotes: list[str]
+    rating: int | None

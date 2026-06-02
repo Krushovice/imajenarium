@@ -68,7 +68,27 @@ class UserBookRepository(BaseRepository[UserBook]):
         result = await self.session.execute(
             select(UserBook)
             .where(UserBook.user_id == user_id, UserBook.status == BookStatus.READ)
+            .options(selectinload(UserBook.book))
             .order_by(UserBook.finished_at.desc().nulls_last())
             .limit(limit)
         )
         return list(result.scalars().all())
+
+    async def get_friends_quotes_for_book(
+        self, book_id: uuid.UUID, friend_ids: list[uuid.UUID]
+    ) -> list[UserBook]:
+        if not friend_ids:
+            return []
+        from sqlalchemy.orm import selectinload as _sli
+        from app.models.users import User
+        result = await self.session.execute(
+            select(UserBook)
+            .where(
+                UserBook.book_id == book_id,
+                UserBook.user_id.in_(friend_ids),
+                UserBook.is_private == False,  # noqa: E712
+            )
+            .options(_sli(UserBook.user))
+        )
+        entries = list(result.scalars().all())
+        return [e for e in entries if e.quotes]
