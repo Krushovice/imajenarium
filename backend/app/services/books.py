@@ -178,8 +178,9 @@ class UserBookService:
         # Filter out None values so we don't overwrite existing data
         clean = {k: v for k, v in updates.items() if v is not None}
         if not clean:
-            return entry
-        return await self._user_books.update(entry, clean)
+            return await self._user_books.get_with_book(entry.id) or entry  # type: ignore[return-value]
+        updated = await self._user_books.update(entry, clean)
+        return await self._user_books.get_with_book(updated.id) or updated  # type: ignore[return-value]
 
     async def remove_from_shelf(self, user_id: uuid.UUID, book_id: uuid.UUID) -> None:
         entry = await self._user_books.get_by_user_and_book(user_id, book_id)
