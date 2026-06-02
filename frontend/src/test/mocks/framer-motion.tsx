@@ -7,7 +7,7 @@ const motion = new Proxy(
     get: (_target, prop: string) =>
       // eslint-disable-next-line react/display-name
       React.forwardRef(({ children, className, onClick, style, ...rest }: React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode }, ref: React.Ref<HTMLElement>) => {
-        const Tag = prop as keyof JSX.IntrinsicElements;
+        const Tag = prop as keyof React.JSX.IntrinsicElements;
         return React.createElement(Tag, { className, onClick, style, ref, ...rest }, children);
       }),
   }
