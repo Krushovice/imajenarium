@@ -11,8 +11,10 @@ import {
   fetchCatalog,
   textSearchBooks,
   semanticSearchBooks,
+  fetchPromptRecommendations,
   addToShelf,
   type BookSearchResult,
+  type EphemeralRecommendation,
 } from "@/lib/api";
 
 function catalogToBookData(book: BookSearchResult): BookData {
@@ -26,7 +28,20 @@ function catalogToBookData(book: BookSearchResult): BookData {
   };
 }
 
-type SearchMode = "text" | "semantic";
+function promptRecToBookData(rec: EphemeralRecommendation): BookData | null {
+  if (!rec.book_id || !rec.book) return null;
+  return {
+    id: rec.book_id,
+    title: rec.book.title,
+    author: rec.book.author,
+    year: rec.book.published_year ?? undefined,
+    emotionTags: rec.book.emotional_tags ?? [],
+    coverUrl: rec.book.cover_url ?? undefined,
+    whyRecommended: rec.explanation,
+  };
+}
+
+type SearchMode = "text" | "semantic" | "ai";
 
 export default function CatalogPage() {
   const [query, setQuery] = useState("");
@@ -65,14 +80,20 @@ export default function CatalogPage() {
     setError(null);
     setSearched(true);
     try {
-      let results: BookSearchResult[];
-      if (mode === "semantic") {
-        results = await semanticSearchBooks(query, 30);
+      if (mode === "ai") {
+        const { items } = await fetchPromptRecommendations(query, 12);
+        const mapped = items.map(promptRecToBookData).filter(Boolean) as BookData[];
+        setBooks(mapped);
+        setTotal(mapped.length);
+      } else if (mode === "semantic") {
+        const results = await semanticSearchBooks(query, 30);
+        setBooks(results.map(catalogToBookData));
+        setTotal(results.length);
       } else {
-        results = await textSearchBooks(query, 30);
+        const results = await textSearchBooks(query, 30);
+        setBooks(results.map(catalogToBookData));
+        setTotal(results.length);
       }
-      setBooks(results.map(catalogToBookData));
-      setTotal(results.length);
     } catch {
       setError("Ошибка поиска. Попробуй снова.");
     } finally {
@@ -130,7 +151,7 @@ export default function CatalogPage() {
             {/* Search */}
             <div className="space-y-3 max-w-2xl">
               {/* Mode toggle */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => setMode("text")}
                   className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${
@@ -151,6 +172,17 @@ export default function CatalogPage() {
                 >
                   <Sparkles size={13} />
                   Семантический
+                </button>
+                <button
+                  onClick={() => setMode("ai")}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border flex items-center gap-1.5 ${
+                    mode === "ai"
+                      ? "bg-amber/15 border-amber/40 text-amber"
+                      : "border-border/60 text-muted-foreground hover:border-amber/30"
+                  }`}
+                >
+                  <Sparkles size={13} />
+                  AI Подбор
                 </button>
               </div>
 
@@ -192,6 +224,12 @@ export default function CatalogPage() {
                 <p className="text-xs text-[#9A7D5A] flex items-center gap-1.5">
                   <Sparkles size={11} className="text-amber" />
                   Ищет по смыслу и атмосфере — попробуй «меланхоличный Петербург»
+                </p>
+              )}
+              {mode === "ai" && (
+                <p className="text-xs text-[#9A7D5A] flex items-center gap-1.5">
+                  <Sparkles size={11} className="text-amber" />
+                  AI подберёт книги по описанию — попробуй «хочу как Достоевский, но в космосе»
                 </p>
               )}
             </div>
@@ -262,19 +300,24 @@ export default function CatalogPage() {
               animate="visible"
               className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
             >
-              {books.map((book, i) => (
-                <motion.div
-                  key={book.id}
-                  variants={staggerItem}
-                  transition={{ delay: Math.min(i * 0.04, 0.5) }}
-                >
-                  <BookCard
-                    book={book}
-                    href={`/books/${book.id}`}
-                    onStatusChange={() => handleAddToShelf(book.id)}
-                  />
-                </motion.div>
-              ))}
+              {books.map((book, i) => {
+                const href = book.whyRecommended
+                  ? `/books/${book.id}?explanation=${encodeURIComponent(book.whyRecommended)}`
+                  : `/books/${book.id}`;
+                return (
+                  <motion.div
+                    key={book.id}
+                    variants={staggerItem}
+                    transition={{ delay: Math.min(i * 0.04, 0.5) }}
+                  >
+                    <BookCard
+                      book={book}
+                      href={href}
+                      onStatusChange={() => handleAddToShelf(book.id)}
+                    />
+                  </motion.div>
+                );
+              })}
             </motion.div>
           )}
         </div>

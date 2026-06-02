@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { BookOpen, Star, Sparkles, ChevronLeft, Check, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -12,8 +13,10 @@ import {
   getShelfEntry,
   addToShelf,
   updateShelfEntry,
+  fetchFriendsQuotes,
   type BookOut,
   type UserBookOut,
+  type FriendQuoteOut,
 } from "@/lib/api";
 
 function coverGradient(title: string): string {
@@ -40,9 +43,12 @@ type StatusValue = (typeof STATUS_OPTIONS)[number]["value"];
 
 export default function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const searchParams = useSearchParams();
+  const whyRecommended = searchParams.get("explanation");
 
   const [book, setBook] = useState<BookOut | null>(null);
   const [shelfEntry, setShelfEntry] = useState<UserBookOut | null>(null);
+  const [friendQuotes, setFriendQuotes] = useState<FriendQuoteOut[]>([]);
   const [loadingBook, setLoadingBook] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,9 +67,10 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
     setLoadingBook(true);
     setError(null);
     try {
-      const [bookResult, shelfResult] = await Promise.allSettled([
+      const [bookResult, shelfResult, quotesResult] = await Promise.allSettled([
         getBook(id),
         getShelfEntry(id),
+        fetchFriendsQuotes(id),
       ]);
 
       if (bookResult.status === "fulfilled") {
@@ -79,6 +86,10 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
         setSelectedStatus(entry.status as StatusValue);
         setRating(entry.rating ? Math.ceil(entry.rating / 2) : 0);
         setReview(entry.review ?? "");
+      }
+
+      if (quotesResult.status === "fulfilled") {
+        setFriendQuotes(quotesResult.value);
       }
     } finally {
       setLoadingBook(false);
@@ -331,6 +342,19 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
             </motion.div>
           </motion.div>
 
+          {/* Why recommended (from AI search) */}
+          {whyRecommended && (
+            <motion.div variants={fadeInUp} initial="hidden" animate="visible">
+              <GlassCard className="space-y-3 border border-amber/20">
+                <h2 className="flex items-center gap-2 font-heading text-lg font-semibold text-cream">
+                  <Sparkles size={16} className="text-amber" />
+                  Почему именно эта книга
+                </h2>
+                <p className="text-sm text-[#C4A882] leading-relaxed">{whyRecommended}</p>
+              </GlassCard>
+            </motion.div>
+          )}
+
           {/* Description + AI summary */}
           {(book.description || book.ai_summary) && (
             <motion.div
@@ -365,15 +389,27 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
           <motion.div variants={fadeInUp} initial="hidden" animate="visible">
             <GlassCard className="space-y-3">
               <h2 className="font-heading text-lg font-semibold text-cream">Цитаты друзей</h2>
-              {shelfEntry?.quotes && shelfEntry.quotes.length > 0 ? (
-                <div className="space-y-2">
-                  {(shelfEntry.quotes as string[]).map((q, i) => (
-                    <blockquote
-                      key={i}
-                      className="border-l-2 border-amber/40 pl-3 text-sm text-[#9A7D5A] italic leading-relaxed"
-                    >
-                      «{q}»
-                    </blockquote>
+              {friendQuotes.length > 0 ? (
+                <div className="space-y-4">
+                  {friendQuotes.map((entry, i) => (
+                    <div key={i} className="space-y-2">
+                      <p className="text-xs font-medium text-amber">
+                        {entry.author.display_name ?? entry.author.username}
+                        {entry.rating != null && (
+                          <span className="ml-2 text-muted-foreground font-normal">
+                            {entry.rating}/10
+                          </span>
+                        )}
+                      </p>
+                      {entry.quotes.map((q, qi) => (
+                        <blockquote
+                          key={qi}
+                          className="border-l-2 border-amber/40 pl-3 text-sm text-[#9A7D5A] italic leading-relaxed"
+                        >
+                          «{q}»
+                        </blockquote>
+                      ))}
+                    </div>
                   ))}
                 </div>
               ) : (
