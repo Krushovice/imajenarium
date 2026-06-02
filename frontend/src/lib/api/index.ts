@@ -89,6 +89,47 @@ export async function fetchMyDiary(limit = 20): Promise<DiaryListResponse> {
   return res.data;
 }
 
+export interface DiaryEntryCreate {
+  content: string;
+  book_id?: string | null;
+  mood?: string | null;
+  emotion_tags?: string[];
+  quotes?: string[];
+  is_private?: boolean;
+}
+
+export interface DiaryEntryUpdate {
+  content?: string;
+  mood?: string | null;
+  emotion_tags?: string[];
+  quotes?: string[];
+  is_private?: boolean;
+}
+
+export interface DiaryAnalyzeResponse {
+  entry: DiaryEntryOut;
+  dna_updated: boolean;
+}
+
+export async function createDiaryEntry(data: DiaryEntryCreate): Promise<DiaryEntryOut> {
+  const res = await apiClient.post<DiaryEntryOut>("/diary", data);
+  return res.data;
+}
+
+export async function updateDiaryEntry(id: string, data: DiaryEntryUpdate): Promise<DiaryEntryOut> {
+  const res = await apiClient.patch<DiaryEntryOut>(`/diary/${id}`, data);
+  return res.data;
+}
+
+export async function deleteDiaryEntry(id: string): Promise<void> {
+  await apiClient.delete(`/diary/${id}`);
+}
+
+export async function analyzeDiaryEntry(id: string): Promise<DiaryAnalyzeResponse> {
+  const res = await apiClient.post<DiaryAnalyzeResponse>(`/diary/${id}/analyze`);
+  return res.data;
+}
+
 // ── Recommendations ─────────────────────────────────────────────────────────
 
 export interface RecommendationOut {
@@ -110,9 +151,41 @@ export interface RecommendationListResponse {
   total: number;
 }
 
-export async function fetchMyRecommendations(limit = 20): Promise<RecommendationListResponse> {
-  const res = await apiClient.get<RecommendationListResponse>("/recommendations", {
-    params: { limit },
+export async function fetchMyRecommendations(limit = 20, source?: string): Promise<RecommendationListResponse> {
+  const params: Record<string, string | number> = { limit };
+  if (source) params.source = source;
+  const res = await apiClient.get<RecommendationListResponse>("/recommendations", { params });
+  return res.data;
+}
+
+export async function refreshDNARecommendations(count = 20): Promise<RecommendationListResponse> {
+  const res = await apiClient.post<RecommendationListResponse>("/recommendations/refresh/dna", null, {
+    params: { count },
+  });
+  return res.data;
+}
+
+export async function refreshCollaborativeRecommendations(count = 20): Promise<RecommendationListResponse> {
+  const res = await apiClient.post<RecommendationListResponse>("/recommendations/refresh/collaborative", null, {
+    params: { count },
+  });
+  return res.data;
+}
+
+export async function explainRecommendation(recId: string): Promise<RecommendationOut> {
+  const res = await apiClient.post<RecommendationOut>(`/recommendations/${recId}/explain`);
+  return res.data;
+}
+
+export async function fetchMoodRecommendations(
+  mood: string,
+  context = "",
+  count = 5
+): Promise<EphemeralListResponse> {
+  const res = await apiClient.post<EphemeralListResponse>("/recommendations/by-mood", {
+    mood,
+    context,
+    count,
   });
   return res.data;
 }
@@ -294,4 +367,22 @@ export async function updateShelfEntry(bookId: string, data: UserBookUpdateInput
 
 export async function removeFromShelf(bookId: string): Promise<void> {
   await apiClient.delete(`/books/${bookId}/shelf`);
+}
+
+export interface FriendQuoteAuthor {
+  id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
+export interface FriendQuoteOut {
+  author: FriendQuoteAuthor;
+  quotes: string[];
+  rating: number | null;
+}
+
+export async function fetchFriendsQuotes(bookId: string): Promise<FriendQuoteOut[]> {
+  const res = await apiClient.get<FriendQuoteOut[]>(`/books/${bookId}/friends-quotes`);
+  return res.data;
 }
