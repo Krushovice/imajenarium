@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { StarryBackground } from "@/components/design-system";
 import { apiClient } from "@/lib/api/client";
 import { useAuthStore } from "@/store/auth.store";
 
-export default function GoogleCallbackPage() {
+function GoogleCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser, setAccessToken } = useAuthStore();
@@ -43,7 +43,8 @@ export default function GoogleCallbackPage() {
           avatarUrl: data.user.avatar_url ?? undefined,
           isGuest: data.user.is_guest,
         });
-        router.push("/app");
+        const isNewUser = !data.user.display_name;
+        router.push(isNewUser ? "/auth/onboarding" : "/books");
       })
       .catch(() => {
         setError("Ошибка авторизации через Google");
@@ -78,5 +79,13 @@ export default function GoogleCallbackPage() {
         </motion.div>
       </div>
     </>
+  );
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense>
+      <GoogleCallbackInner />
+    </Suspense>
   );
 }
