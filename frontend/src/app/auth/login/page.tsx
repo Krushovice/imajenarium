@@ -65,7 +65,7 @@ export default function LoginPage() {
       try {
         const { data } = await apiClient.post("/auth/telegram", user);
         storeAuthResponse(data);
-        router.push("/app");
+        router.push("/books");
       } catch {
         setError("Ошибка авторизации через Telegram");
       } finally {
@@ -98,7 +98,7 @@ export default function LoginPage() {
     try {
       const { data } = await apiClient.post("/auth/login", { email, password });
       storeAuthResponse(data);
-      router.push("/app");
+      router.push("/books");
     } catch (err: unknown) {
       const status = (err as { response?: { status: number } })?.response?.status;
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -126,7 +126,7 @@ export default function LoginPage() {
     try {
       const { data } = await apiClient.post("/auth/guest");
       storeAuthResponse(data);
-      router.push("/app");
+      router.push("/books");
     } catch {
       setError("Ошибка создания гостевой сессии");
     } finally {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Check, Loader2 } from "lucide-react";
@@ -15,7 +15,6 @@ interface OnboardingQuestion {
   multi_select: boolean;
 }
 
-// Mood step — stored in localStorage only, never sent to DNA endpoint.
 const MOODS = [
   { id: "reflective", emoji: "🌙", label: "Задумчивое" },
   { id: "adventurous", emoji: "⚡", label: "Авантюрное" },
@@ -30,25 +29,35 @@ const stepVariants = {
   exit: { opacity: 0, x: -48 },
 };
 
-// step 0 = mood (localStorage only)
-// steps 1..N = dynamicQuestions[step-1] (AI-generated, each depends on previous answers)
-// step N+1 = confirm + submit
-
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [currentMood, setCurrentMood] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
-  const [dynamicQuestions, setDynamicQuestions] = useState<OnboardingQuestion[]>([]);
-  const [loadingNextQuestion, setLoadingNextQuestion] = useState(false);
-  const [onboardingDone, setOnboardingDone] = useState(false);
+  const [questions, setQuestions] = useState<OnboardingQuestion[]>([]);
+  const [questionsLoaded, setQuestionsLoaded] = useState(false);
   const [building, setBuilding] = useState(false);
   const [buildError, setBuildError] = useState("");
 
-  const isQuestionStep = step >= 1 && !onboardingDone;
-  const isConfirmStep = onboardingDone || (step >= 1 && step > dynamicQuestions.length);
-  const currentQ = isQuestionStep && step <= dynamicQuestions.length ? dynamicQuestions[step - 1] : null;
-  const totalSteps = dynamicQuestions.length + 2; // mood + questions + confirm
+  // step 0 = mood (localStorage only)
+  // steps 1..N = questions[step-1]
+  // step N+1 = confirm + submit
+  const totalSteps = questions.length + 2;
+  const isQuestionStep = step >= 1 && step <= questions.length;
+  const isConfirmStep = step > questions.length;
+  const currentQ = isQuestionStep ? questions[step - 1] : null;
+
+  useEffect(() => {
+    apiClient
+      .get<OnboardingQuestion[]>("/literary-dna/onboarding/questions")
+      .then(({ data }) => {
+        setQuestions(data);
+        setQuestionsLoaded(true);
+      })
+      .catch(() => {
+        setQuestionsLoaded(true);
+      });
+  }, []);
 
   function toggleOption(qId: string, option: string, multiSelect: boolean) {
     setAnswers((prev) => {
@@ -79,45 +88,11 @@ export default function OnboardingPage() {
     return true;
   }
 
-  async function advanceToNextQuestion(currentAnswers: Record<string, string | string[]>) {
-    // If we already have the next question loaded, just advance
-    if (dynamicQuestions.length > step) {
-      setStep(step + 1);
-      return;
-    }
-
-    setLoadingNextQuestion(true);
-    try {
-      const res = await apiClient.post<{ done: boolean; question?: OnboardingQuestion }>(
-        "/literary-dna/onboarding/next-question",
-        { answers_so_far: currentAnswers }
-      );
-      if (res.data.done) {
-        setOnboardingDone(true);
-        setStep(dynamicQuestions.length + 1);
-      } else if (res.data.question) {
-        setDynamicQuestions((prev) => [...prev, res.data.question!]);
-        setStep(step + 1);
-      }
-    } catch {
-      // Fallback: treat as done if request fails
-      setOnboardingDone(true);
-      setStep(dynamicQuestions.length + 1);
-    } finally {
-      setLoadingNextQuestion(false);
-    }
-  }
-
-  async function handleMoodNext() {
-    if (currentMood) {
+  function handleNext() {
+    if (step === 0 && currentMood) {
       localStorage.setItem("current_mood", currentMood);
     }
-    await advanceToNextQuestion({});
-  }
-
-  async function handleQuestionNext() {
-    if (!currentQ) return;
-    await advanceToNextQuestion(answers);
+    setStep((s) => s + 1);
   }
 
   async function handleFinish() {
@@ -125,11 +100,22 @@ export default function OnboardingPage() {
     setBuildError("");
     try {
       await apiClient.post("/literary-dna/onboarding", { answers });
-      router.push("/app");
+      router.push("/books");
     } catch {
       setBuildError("Не удалось сохранить профиль — попробуй ещё раз");
       setBuilding(false);
     }
+  }
+
+  if (!questionsLoaded) {
+    return (
+      <>
+        <StarryBackground />
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="text-amber animate-spin" size={32} />
+        </div>
+      </>
+    );
   }
 
   return (
@@ -143,9 +129,7 @@ export default function OnboardingPage() {
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="font-heading text-lg text-gradient-amber">Book Imaginarium</span>
               <span>
-                {onboardingDone || isConfirmStep
-                  ? "Готово"
-                  : `Шаг ${step + 1}${dynamicQuestions.length > 0 ? ` из ~${totalSteps}` : ""}`}
+                {isConfirmStep ? "Готово" : `Шаг ${step + 1} из ${totalSteps}`}
               </span>
             </div>
             <div className="h-1 rounded-full bg-white/5 overflow-hidden">
@@ -162,19 +146,7 @@ export default function OnboardingPage() {
           </div>
 
           <AnimatePresence mode="wait">
-            {loadingNextQuestion ? (
-              <motion.div
-                key="loading-question"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <GlassCard glow className="flex items-center justify-center py-16 gap-3">
-                  <Loader2 className="text-amber animate-spin" size={24} />
-                  <span className="text-[#D4B896]">AI формирует следующий вопрос...</span>
-                </GlassCard>
-              </motion.div>
-            ) : !building ? (
+            {!building ? (
               <motion.div
                 key={step}
                 variants={stepVariants}
@@ -184,7 +156,7 @@ export default function OnboardingPage() {
                 transition={{ duration: 0.35, ease: "easeOut" }}
               >
                 <GlassCard glow className="space-y-6">
-                  {/* Step 0: current mood (localStorage only) */}
+                  {/* Step 0: current mood */}
                   {step === 0 && (
                     <>
                       <div className="space-y-2">
@@ -213,7 +185,7 @@ export default function OnboardingPage() {
                         ))}
                       </div>
                       <Button
-                        onClick={handleMoodNext}
+                        onClick={handleNext}
                         disabled={!canAdvance()}
                         className="w-full bg-amber hover:bg-amber-light text-background font-semibold py-5"
                       >
@@ -222,7 +194,7 @@ export default function OnboardingPage() {
                     </>
                   )}
 
-                  {/* Dynamic AI-generated questions */}
+                  {/* Dynamic questions */}
                   {isQuestionStep && currentQ && (
                     <>
                       <div className="space-y-2">
@@ -257,13 +229,13 @@ export default function OnboardingPage() {
                       <div className="flex gap-3">
                         <Button
                           variant="outline"
-                          onClick={() => setStep(step - 1)}
+                          onClick={() => setStep((s) => s - 1)}
                           className="border-amber/30 text-amber hover:bg-amber/5 flex-1 py-5"
                         >
                           Назад
                         </Button>
                         <Button
-                          onClick={handleQuestionNext}
+                          onClick={handleNext}
                           disabled={!canAdvance()}
                           className="bg-amber hover:bg-amber-light text-background font-semibold flex-1 py-5"
                         >
@@ -282,11 +254,12 @@ export default function OnboardingPage() {
                           Всё готово!
                         </h2>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                          AI построит твой Literary DNA на основе {Object.keys(answers).length} ответов. Профиль будет расти с каждой книгой.
+                          AI построит твой Literary DNA на основе {Object.keys(answers).length} ответов.
+                          Профиль будет расти с каждой книгой.
                         </p>
                       </div>
                       <div className="space-y-2 py-2">
-                        {dynamicQuestions.map((q) => {
+                        {questions.map((q) => {
                           const ans = answers[q.id];
                           const display = Array.isArray(ans) ? ans.join(", ") : (ans ?? "—");
                           return (
@@ -303,10 +276,7 @@ export default function OnboardingPage() {
                       <div className="flex gap-3">
                         <Button
                           variant="outline"
-                          onClick={() => {
-                            setOnboardingDone(false);
-                            setStep(dynamicQuestions.length);
-                          }}
+                          onClick={() => setStep(questions.length)}
                           className="border-amber/30 text-amber hover:bg-amber/5 flex-1 py-5"
                         >
                           Назад
