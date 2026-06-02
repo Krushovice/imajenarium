@@ -7,15 +7,16 @@ import { MainLayout } from "@/components/layout";
 import { StarryBackground, GlassCard, EmotionBadge, AmbientParticles } from "@/components/design-system";
 import { BookCard, type BookData } from "@/components/books";
 import { staggerContainer, staggerItem, fadeInUp } from "@/lib/animations";
-import { fetchPromptRecommendations, type EphemeralRecommendation } from "@/lib/api";
+import { fetchPromptRecommendations, fetchMoodRecommendations, type EphemeralRecommendation } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 const MOOD_CHIPS = [
-  { emoji: "🌙", label: "Меланхоличное" },
-  { emoji: "⚡", label: "Напряжённое" },
-  { emoji: "🌹", label: "Романтичное" },
-  { emoji: "🔭", label: "Философское" },
-  { emoji: "🏔️", label: "Эпическое" },
-  { emoji: "🌀", label: "Сюрреальное" },
+  { emoji: "🌙", label: "Меланхоличное", mood: "меланхолично" },
+  { emoji: "⚡", label: "Напряжённое", mood: "тревожно" },
+  { emoji: "🌹", label: "Романтичное", mood: "романтично" },
+  { emoji: "🔭", label: "Философское", mood: "философски" },
+  { emoji: "🏔️", label: "Эпическое", mood: "эпично" },
+  { emoji: "🌀", label: "Сюрреальное", mood: "сюрреально" },
 ];
 
 const EXAMPLE_PROMPTS = [
@@ -40,6 +41,7 @@ function ephemeralToBookData(rec: EphemeralRecommendation, idx: number): BookDat
 export default function DiscoverPage() {
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState("");
+  const [activeMood, setActiveMood] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<BookData[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +51,7 @@ export default function DiscoverPage() {
     if (!q.trim()) return;
     setSubmitted(q);
     setQuery(q);
+    setActiveMood(null);
     setLoading(true);
     setResults([]);
     setError(null);
@@ -62,10 +65,21 @@ export default function DiscoverPage() {
     }
   }
 
-  function handleChip(label: string) {
-    const q = `Хочу ${label.toLowerCase()} книгу`;
-    setQuery(q);
-    handleSearch(q);
+  async function handleChip(chip: { label: string; mood: string }) {
+    setActiveMood(chip.mood);
+    setSubmitted(chip.label);
+    setQuery("");
+    setLoading(true);
+    setResults([]);
+    setError(null);
+    try {
+      const data = await fetchMoodRecommendations(chip.mood, "", 6);
+      setResults(data.items.map(ephemeralToBookData));
+    } catch {
+      setError("Не удалось получить рекомендации по настроению.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function clearSearch() {
@@ -135,20 +149,24 @@ export default function DiscoverPage() {
             </motion.div>
 
             {/* Mood chips */}
-            {!submitted && (
-              <motion.div variants={staggerItem} className="flex flex-wrap gap-2 justify-center">
-                {MOOD_CHIPS.map((chip) => (
-                  <button
-                    key={chip.label}
-                    onClick={() => handleChip(chip.label)}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-amber/25 text-sm text-[#D4B896] hover:border-amber/50 hover:bg-amber/5 hover:text-amber transition-all"
-                  >
-                    <span>{chip.emoji}</span>
-                    {chip.label}
-                  </button>
-                ))}
-              </motion.div>
-            )}
+            <motion.div variants={staggerItem} className="flex flex-wrap gap-2 justify-center">
+              {MOOD_CHIPS.map((chip) => (
+                <button
+                  key={chip.label}
+                  onClick={() => handleChip(chip)}
+                  disabled={loading}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-sm transition-all",
+                    activeMood === chip.mood
+                      ? "border-amber bg-amber/15 text-amber"
+                      : "border-amber/25 text-[#D4B896] hover:border-amber/50 hover:bg-amber/5 hover:text-amber"
+                  )}
+                >
+                  <span>{chip.emoji}</span>
+                  {chip.label}
+                </button>
+              ))}
+            </motion.div>
 
             {/* Example prompts */}
             {!submitted && (
